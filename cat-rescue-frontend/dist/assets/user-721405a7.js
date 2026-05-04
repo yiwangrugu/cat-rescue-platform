@@ -1,0 +1,1 @@
+import{c as n,E as a,a as t,r as c,i as p,A as l}from"./index-fd150f61.js";const o=n(l);for(const[e,s]of Object.entries(a))o.component(e,s);o.use(t());o.use(c);o.use(p);o.mount("#app");console.log("流浪猫救助平台 - 用户端已启动");console.log("前端端口: 3000");console.log("后端端口: 8080");

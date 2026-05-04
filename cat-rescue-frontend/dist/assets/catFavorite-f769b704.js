@@ -1,0 +1,1 @@
+import{a7 as a}from"./index-fd150f61.js";const e={favoriteCat:t=>a.post(`/cats/${t}/favorite`),unfavoriteCat:t=>a.post(`/cats/${t}/unfavorite`),getUserFavoriteCats:t=>a.get(`/cats/users/${t}/favorites`),checkFavoriteStatus:t=>a.get(`/cats/${t}/favorite/status`)};export{e as c};
