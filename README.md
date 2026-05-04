@@ -237,27 +237,6 @@ server {
 后端日志位置：`cat-rescue-backend/logs/application.log`
 前端开发日志：浏览器开发者工具Console面板
 
-## 🤝 贡献指南
-
-1. Fork 本项目
-2. 创建特性分支：`git checkout -b feature/AmazingFeature`
-3. 提交更改：`git commit -m 'Add some AmazingFeature'`
-4. 推送到分支：`git push origin feature/AmazingFeature`
-5. 提交Pull Request
-
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
-
-## 🙏 致谢
-
-感谢所有为本项目做出贡献的开发者和测试人员！
-
-## 📞 联系方式
-
-- 项目主页：https://github.com/yiwangrugu/cat-rescue-platform
-- 问题反馈：请提交Issue
-- 功能建议：欢迎提交Pull Request
 
 ---
 
