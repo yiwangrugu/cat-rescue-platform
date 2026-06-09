@@ -45,7 +45,7 @@ public class UserController {
             // 获取更详细的统计数据
             // 帖子状态统计 - 使用数据库实际存储的状态值
             QueryWrapper<Post> publishedPostWrapper = new QueryWrapper<>();
-            publishedPostWrapper.eq("author_id", userId).eq("status", "已发布");
+            publishedPostWrapper.eq("author_id", userId).eq("status", "PUBLISHED");
             long publishedPostCount = postRepository.selectCount(publishedPostWrapper);
 
             QueryWrapper<Post> pendingPostWrapper = new QueryWrapper<>();

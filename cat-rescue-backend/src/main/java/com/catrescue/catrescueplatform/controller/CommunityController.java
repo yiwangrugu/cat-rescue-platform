@@ -5,6 +5,8 @@ import com.catrescue.catrescueplatform.config.BusinessLog;
 import com.catrescue.catrescueplatform.entity.Post;
 import com.catrescue.catrescueplatform.service.PostService;
 import com.catrescue.catrescueplatform.config.RescueWebSocketHandler;
+import com.catrescue.catrescueplatform.util.JwtUtil;
+import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,7 @@ import java.util.Map;
 public class CommunityController {
 
     private final PostService postService;
+    private final JwtUtil jwtUtil;
 
     @GetMapping("/posts")
     public ResponseEntity<IPage<Post>> getPosts(
@@ -135,14 +138,22 @@ public class CommunityController {
     }
 
     @PostMapping("/posts/{id}/favorite")
-    public ResponseEntity<?> favoritePost(@PathVariable Long id) {
-        postService.favoritePost(id);
+    public ResponseEntity<?> favoritePost(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = jwtUtil.getUserIdFromRequest(request);
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        postService.favoritePost(id, userId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/posts/{id}/unfavorite")
-    public ResponseEntity<?> unfavoritePost(@PathVariable Long id) {
-        postService.unfavoritePost(id);
+    public ResponseEntity<?> unfavoritePost(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = jwtUtil.getUserIdFromRequest(request);
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        postService.unfavoritePost(id, userId);
         return ResponseEntity.ok().build();
     }
 

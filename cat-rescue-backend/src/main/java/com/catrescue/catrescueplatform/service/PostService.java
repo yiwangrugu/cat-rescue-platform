@@ -97,14 +97,14 @@ public class PostService {
         post.setCommentCount(0);
         // 新创建的帖子默认有效
         post.setIsValid(true);
-        // 如果前端没有设置状态，默认设置为已发布
+        // 如果前端没有设置状态，默认设置为PUBLISHED
         if (post.getStatus() == null || post.getStatus().isEmpty()) {
-            post.setStatus("已发布");
+            post.setStatus("PUBLISHED");
         }
         postRepository.insert(post);
 
-        // 如果帖子状态是已发布，更新用户的帖子数
-        if (post.getAuthorId() != null && "已发布".equals(post.getStatus())) {
+        // 如果帖子状态是PUBLISHED，更新用户的帖子数
+        if (post.getAuthorId() != null && "PUBLISHED".equals(post.getStatus())) {
             User user = userRepository.selectById(post.getAuthorId());
             if (user != null) {
                 user.setPostCount((user.getPostCount() != null ? user.getPostCount() : 0) + 1);
@@ -185,23 +185,33 @@ public class PostService {
         }
     }
 
-    public void favoritePost(Long postId) {
-        System.out.println("收藏操作开始 - 帖子ID: " + postId);
+    public void favoritePost(Long postId, Long userId) {
+        System.out.println("收藏操作开始 - 帖子ID: " + postId + ", 用户ID: " + userId);
 
-        // 简化实现：直接增加收藏计数
         Post post = postRepository.selectById(postId);
         if (post != null) {
             int currentCount = post.getFavoriteCount() != null ? post.getFavoriteCount() : 0;
             post.setFavoriteCount(currentCount + 1);
             postRepository.updateById(post);
             System.out.println("收藏成功 - 帖子ID: " + postId + ", 当前收藏数: " + (currentCount + 1));
+
+            // 插入收藏记录到favorites表
+            Favorite favorite = new Favorite();
+            favorite.setUserId(userId);
+            favorite.setPostId(postId);
+            favorite.setType("POST");
+            try {
+                favoriteRepository.insert(favorite);
+                System.out.println("收藏记录已保存到数据库 - 用户ID: " + userId + ", 帖子ID: " + postId);
+            } catch (Exception e) {
+                System.out.println("保存收藏记录失败（可能已存在）: " + e.getMessage());
+            }
         }
     }
 
-    public void unfavoritePost(Long postId) {
-        System.out.println("取消收藏操作开始 - 帖子ID: " + postId);
+    public void unfavoritePost(Long postId, Long userId) {
+        System.out.println("取消收藏操作开始 - 帖子ID: " + postId + ", 用户ID: " + userId);
 
-        // 简化实现：直接减少收藏计数
         Post post = postRepository.selectById(postId);
         if (post != null) {
             int currentCount = post.getFavoriteCount() != null ? post.getFavoriteCount() : 0;
@@ -209,6 +219,17 @@ public class PostService {
                 post.setFavoriteCount(currentCount - 1);
                 postRepository.updateById(post);
                 System.out.println("取消收藏成功 - 帖子ID: " + postId + ", 当前收藏数: " + (currentCount - 1));
+            }
+
+            // 删除favorites表中的收藏记录
+            QueryWrapper<Favorite> wrapper = new QueryWrapper<>();
+            wrapper.eq("user_id", userId);
+            wrapper.eq("post_id", postId);
+            try {
+                favoriteRepository.delete(wrapper);
+                System.out.println("收藏记录已从数据库删除 - 用户ID: " + userId + ", 帖子ID: " + postId);
+            } catch (Exception e) {
+                System.out.println("删除收藏记录失败: " + e.getMessage());
             }
         }
     }
@@ -316,10 +337,10 @@ public class PostService {
         if (post != null) {
             System.out.println("找到帖子，当前状态: " + post.getStatus());
 
-            // 只有在帖子状态不是已发布时才更新用户帖子数
-            boolean shouldUpdatePostCount = !"已发布".equals(post.getStatus());
+            // 只有在帖子状态不是PUBLISHED时才更新用户帖子数
+            boolean shouldUpdatePostCount = !"PUBLISHED".equals(post.getStatus());
 
-            post.setStatus("已发布");
+            post.setStatus("PUBLISHED");
             if (remark != null && !remark.trim().isEmpty()) {
                 post.setAuditRemark(remark);
             }

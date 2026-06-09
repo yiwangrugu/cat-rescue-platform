@@ -792,7 +792,7 @@ const submitPost = async () => {
       viewCount: 0,
       likeCount: 0,
       commentCount: 0,
-      status: 'PUBLISHED'
+      status: 'PENDING_REVIEW'
     }
     
     // 调用后端API发布帖子
@@ -805,7 +805,7 @@ const submitPost = async () => {
     // 更新总数量
     total.value += 1
     
-    ElMessage.success('帖子发布成功')
+    ElMessage.success('帖子已提交审核，请等待管理员审核通过')
     showPostForm.value = false
     
     // 重置表单
@@ -817,7 +817,11 @@ const submitPost = async () => {
     }
     
     // 发送WebSocket通知
-    webSocketService.sendMessage('POST_DATA_UPDATED')
+    try {
+      webSocketService.sendMessage('POST_DATA_UPDATED')
+    } catch (wsError) {
+      console.warn('WebSocket通知发送失败:', wsError)
+    }
     
     // 发送localStorage事件通知其他标签页
     localStorage.setItem('postDataUpdated', Date.now().toString())
@@ -826,8 +830,8 @@ const submitPost = async () => {
     await nextTick()
     
   } catch (error) {
-    console.error('发布帖子失败:', error)
-    ElMessage.error('发布失败，请重试')
+    console.error('提交审核失败:', error)
+    ElMessage.error('提交审核失败，请重试')
   } finally {
     submitting.value = false
   }
@@ -835,7 +839,6 @@ const submitPost = async () => {
 
 const deletePost = async (post) => {
   try {
-    // 确认删除
     await ElMessageBox.confirm(
       '确定要删除这篇帖子吗？此操作不可恢复。',
       '删除确认',
@@ -846,18 +849,27 @@ const deletePost = async (post) => {
       }
     )
     
-    // 调用后端API删除帖子
     await communityApi.deletePost(post.id)
     
-    // 更新前端状态，从帖子列表中移除
-    const index = posts.value.findIndex(p => p.id === post.id)
-    if (index > -1) {
-      posts.value.splice(index, 1)
+    const postId = post.id
+    
+    const indexInPosts = posts.value.findIndex(p => p.id === postId)
+    if (indexInPosts > -1) {
+      posts.value.splice(indexInPosts, 1)
       total.value--
     }
     
-    // 从热门帖子中移除
-    const hotIndex = hotPosts.value.findIndex(p => p.id === post.id)
+    const indexInAll = allPosts.value.findIndex(p => p.id === postId)
+    if (indexInAll > -1) {
+      allPosts.value.splice(indexInAll, 1)
+    }
+    
+    const indexInVisible = visiblePosts.value.findIndex(p => p.id === postId)
+    if (indexInVisible > -1) {
+      visiblePosts.value.splice(indexInVisible, 1)
+    }
+    
+    const hotIndex = hotPosts.value.findIndex(p => p.id === postId)
     if (hotIndex > -1) {
       hotPosts.value.splice(hotIndex, 1)
     }

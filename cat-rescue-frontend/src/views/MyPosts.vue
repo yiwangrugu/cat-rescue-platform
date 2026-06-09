@@ -646,8 +646,8 @@ const submitPost = async () => {
     // 重置表单
     resetForm()
   } catch (error) {
-    console.error('发布帖子失败:', error)
-    ElMessage.error('发布帖子失败，请重试')
+    console.error('提交审核失败:', error)
+    ElMessage.error('提交审核失败，请重试')
   } finally {
     submitting.value = false
   }

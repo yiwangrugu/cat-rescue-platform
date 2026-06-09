@@ -106,7 +106,7 @@
               <h4>当前图片：</h4>
               <div class="image-preview-list">
                 <div v-for="(image, index) in currentImages" :key="index" class="image-preview-item">
-                  <img :src="image" :alt="'猫咪图片' + (index + 1)" />
+                  <img :src="getFullImageUrl(image)" :alt="'猫咪图片' + (index + 1)" />
                   <div class="image-actions">
                     <el-button type="danger" size="small" @click="removeCurrentImage(index)">删除</el-button>
                   </div>
@@ -248,7 +248,14 @@ const loadCatDetail = async () => {
     // 加载当前图片
     if (catData.images) {
       try {
-        const images = JSON.parse(catData.images)
+        let images = catData.images
+        if (typeof images === 'string') {
+          if (images.trim().startsWith('[')) {
+            images = JSON.parse(images)
+          } else {
+            images = [images]
+          }
+        }
         currentImages.value = Array.isArray(images) ? images : []
       } catch (e) {
         currentImages.value = []
@@ -259,6 +266,17 @@ const loadCatDetail = async () => {
     ElMessage.error('加载猫咪信息失败')
     router.push('/cats')
   }
+}
+
+const getFullImageUrl = (image) => {
+  if (!image) return ''
+  if (image.startsWith('http')) return image
+  if (image.startsWith('/uploads/')) {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+    const serverBaseUrl = apiBaseUrl.replace('/api', '')
+    return `${serverBaseUrl}${image}`
+  }
+  return image
 }
 
 // 图片上传相关函数

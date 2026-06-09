@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Runtime uploads ###
+cat-rescue-backend/uploads/
+
+### Build output ###
+cat-rescue-frontend/dist/

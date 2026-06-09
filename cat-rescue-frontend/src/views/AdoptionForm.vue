@@ -232,7 +232,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Back, Check } from '@element-plus/icons-vue'
@@ -295,58 +295,65 @@ const form = ref({
   }
 
 const getCatImage = () => {
-  console.log('猫咪图片数据:', cat.value.images) // 调试日志
+  console.log('猫咪图片数据:', cat.value.images)
   
   if (cat.value.images) {
     try {
       let images = cat.value.images
       
-      // 如果images是字符串，尝试解析JSON
       if (typeof images === 'string') {
-        images = JSON.parse(images)
+        if (images.trim() === '') {
+          return '/img/placeholder-cat.jpg'
+        }
+        if (images.trim().startsWith('[')) {
+          images = JSON.parse(images)
+        } else {
+          images = [images]
+        }
       }
       
-      // 确保images是数组
       if (!Array.isArray(images)) {
         images = [images]
       }
       
-      // 处理图片URL，确保是完整路径
       const processedImages = images.map(image => {
         if (typeof image === 'string') {
+          const cleanImage = image.replace(/^['"]|['"]$/g, '')
+          
           // 如果是完整URL，直接返回
-          if (image.startsWith('http')) {
-            return image
+          if (cleanImage.startsWith('http')) {
+            return cleanImage
           }
           // 如果是相对路径，检查是否是上传的图片
-          if (image.startsWith('/uploads/')) {
-            // 上传的图片，添加后端基础URL
-            return image.startsWith('http') ? image : `${import.meta.env.VITE_API_BASE_URL || ''}${image}`
+          if (cleanImage.startsWith('/uploads/')) {
+            const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+            const serverBaseUrl = apiBaseUrl.replace('/api', '')
+            return `${serverBaseUrl}${cleanImage}`
           }
           // 处理相对路径（如../public/img/cat1.jpg）
-          if (image.startsWith('../')) {
+          if (cleanImage.startsWith('../')) {
             // 移除../前缀，转换为正确的静态资源路径
-            const cleanPath = image.replace('../', '')
+            const cleanPath = cleanImage.replace('../', '')
             // 移除public前缀，Vite会自动处理
             const finalPath = cleanPath.replace('public/', '')
             // 确保路径以/img/开头
             return finalPath.startsWith('/img/') ? finalPath : '/img/' + finalPath
           }
           // 如果是静态资源路径（/img/开头），直接返回
-          if (image.startsWith('/img/')) {
-            return image
+          if (cleanImage.startsWith('/img/')) {
+            return cleanImage
           }
           // 其他相对路径，使用Vite的静态资源处理
-          if (image.startsWith('/')) {
+          if (cleanImage.startsWith('/')) {
             // 已经是绝对路径，检查是否需要添加/img/前缀
-            if (!image.startsWith('/uploads') && !image.startsWith('/img')) {
+            if (!cleanImage.startsWith('/uploads') && !cleanImage.startsWith('/img')) {
               // 如果是根路径且不是uploads或img开头，添加img前缀
-              return `/img${image}`
+              return `/img${cleanImage}`
             }
-            return image
+            return cleanImage
           } else {
             // 相对路径（如cat1.jpg），添加/img/前缀
-            return `/img/${image}`
+            return `/img/${cleanImage}`
           }
         }
         // 如果是对象，尝试获取url属性
@@ -408,6 +415,9 @@ const loadCatDetail = async () => {
     const catId = route.query.catId
     console.log('路由参数中的猫咪ID:', catId) // 调试日志
     
+    // 清空猫咪数据
+    cat.value = {}
+    
     if (catId) {
       // 从猫咪详情页面跳转过来，加载指定猫咪信息
       const response = await catApi.getCat(catId)
@@ -428,7 +438,6 @@ const loadCatDetail = async () => {
       }
     } else {
       // 直接访问领养申请页面，显示通用表单
-      cat.value = {}
       form.value.catId = null
       console.log('没有猫咪ID，显示通用表单') // 调试日志
     }
@@ -502,6 +511,25 @@ const submitForm = async () => {
   })
 }
 
+// 清空表单数据
+const resetForm = () => {
+  form.value = {
+    catId: null,
+    name: '',
+    idCard: '',
+    phone: '',
+    address: '',
+    applicationReason: '',
+    livingCondition: '',
+    experience: '',
+    familyMembers: '',
+    financialStatus: '',
+    workSchedule: '',
+    additionalInfo: '',
+    agreed: false
+  }
+}
+
 const goBack = () => {
   if (cat.value.id) {
     router.push(`/cats/${cat.value.id}`)
@@ -521,33 +549,16 @@ onMounted(() => {
     }).catch(() => {
       router.push('/cats')
     })
-    return
   }
-
-  checkApplicantInfo()
-  loadCatDetail()
 })
 
-// 检查申请人信息
-const checkApplicantInfo = async () => {
-  try {
-    const response = await applicantApi.getMyApplicantInfo()
-    if (response.data && response.data.hasInfo) {
-      // 已有申请人信息，填充到表单
-      const applicant = response.data.applicant
-      form.value.name = applicant.realName || ''
-      form.value.idCard = applicant.idCard || ''
-      form.value.phone = applicant.phone || ''
-      form.value.address = applicant.address || ''
-      form.value.familyMembers = applicant.familyMembers || ''
-      form.value.financialStatus = applicant.financialStatus || ''
-      form.value.workSchedule = applicant.workSchedule || ''
-      form.value.additionalInfo = applicant.additionalInfo || ''
-    }
-  } catch (error) {
-    console.log('获取申请人信息失败:', error)
-  }
-}
+watch(() => route.query.catId, async () => {
+  if (!authStore.isAuthenticated) return
+
+  cat.value = {}
+  resetForm()
+  await loadCatDetail()
+}, { immediate: true })
 </script>
 
 <style scoped>

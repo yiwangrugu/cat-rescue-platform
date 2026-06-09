@@ -41,14 +41,14 @@ public class Post {
     @TableField("status")
     private String status;
 
-    @TableField(exist = false)
+    @TableField("audit_remark")
     private String auditRemark;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @TableField(exist = false)
+    @TableField("audit_time")
     private LocalDateTime auditTime;
 
-    @TableField(exist = false)
+    @TableField("is_valid")
     private Boolean isValid;
 
     @TableField(exist = false)
